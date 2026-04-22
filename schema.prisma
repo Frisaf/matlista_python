@@ -1,0 +1,44 @@
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Dishes {
+  id            Int           @id @default(autoincrement())
+  name          String
+  main          Main          @relation(fields: [mainId], references: [id])
+  mainId        Int           @default(0)
+  side          Side          @relation(fields: [sideId], references: [id])
+  sideId        Int           @default(0)
+  otherInfo     String
+  weekendWorthy WeekendWorthy @default(NO)
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  password String
+}
+
+model Side {
+  id         Int      @id @default(autoincrement())
+  side String   @default("")
+  dish       Dishes[]
+}
+
+model Main {
+  id         Int      @id @default(autoincrement())
+  main String   @default("")
+  dish       Dishes[]
+}
+
+enum WeekendWorthy {
+  YES
+  NO
+}
