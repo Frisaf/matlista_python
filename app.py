@@ -48,6 +48,25 @@ class Generator:
         
         return dish
     
+    def get_all_dishes(self, arg) -> list:
+        _dish_list = []
+
+        if arg == "all":
+            for dish in self.dishes:
+                _dish_list.append({"name": dish.name, "side": dish.side.side})
+        
+        elif arg == "weekend":
+            for dish in self.dishes:
+                if Dish(dish.name, dish.main.main, dish.side.side, dish.otherInfo, dish.weekendWorthy).is_weekend_worthy():
+                    _dish_list.append({"name": dish.name, "side": dish.side.side})
+        
+        elif arg == "regular":
+            for dish in self.dishes:
+                if not Dish(dish.name, dish.main.main, dish.side.side, dish.otherInfo, dish.weekendWorthy).is_weekend_worthy():
+                    _dish_list.append({"name": dish.name, "side": dish.side.side})
+
+        return _dish_list
+    
 class Dish:
     def __init__(self, name, main, sides, other_info, weekend_worthy) -> None:
         self.name = name
@@ -67,6 +86,27 @@ class Dish:
             print(f"Övrig info: {self.other_info}")
         
         print(f"Helgvärdig: {self.weekend_worthy}")
+    
+    def is_weekend_worthy(self) -> bool:
+        if self.weekend_worthy == "YES":
+            return True
+        
+        return False
+
+def print_dish_list(arg: str, generator: object) -> None:
+    if arg == "all":
+        print("ALLA MATRÄTTER")
+    
+    elif arg == "weekend":
+        print("ALL HELGMAT")
+    
+    elif arg == "regular":
+        print("ALL VARDAGSMAT")
+
+    all_dishes = generator.get_all_dishes(arg) # type: ignore
+    
+    for dish in all_dishes:
+        print(f"{dish['name']} ({dish['side']})")
 
 async def main() -> None:
     db = Prisma()
@@ -82,14 +122,60 @@ async def main() -> None:
     generator = Generator(dishes)
 
     while True:
-        choices = "1. Nytt matförslag"
+        choices = "1. Nytt matförslag\n2. Visa alla maträtter\n3. Visa alla helgrätter\n4. Visa all vardagsmat\n5. Lägg till maträtt"
 
-        print("ALTERNATIV\n", choices)
+        print("ALTERNATIV\n" + choices)
 
         choice = input("Vad vill du göra?\n> ")
 
         if choice == "1":
             generator.compile_dish().print_info() # type: ignore
+        
+        elif choice == "2":
+            print_dish_list("all", generator)
+        
+        elif choice == "3":
+            print_dish_list("weekend", generator)
+        
+        elif choice == "4":
+            print_dish_list("regular", generator)
+        
+        elif choice == "5":
+            name = input("Maträttens namn:\n> ").title()
+            main = input("Rättens huvudingrediens:\n> ").title()
+            side = input("Rättens tillbehör:\n> ").title()
+            other_info = input("Övrig info om rätten (lämna tom om det inte finns någon):\n> ")
+            
+            while True:
+                weekend_worthy = input("Är rätten helgvärdig? [y/n]:\n> ").lower()
+
+                if weekend_worthy in ["y", "n"]:
+                    weekend_worthy = "YES" if weekend_worthy == "y" else "NO"
+                    break
+            
+            new_dish = Dish(name, main, side, other_info, weekend_worthy)
+            is_duplicate = await db.dishes.find_many(
+                where = {
+                    "name": name,
+                    "main": {
+                        "is": {
+                            main: main
+                        }
+                    },
+                    "side": {
+                        "is": {
+                            side: side
+                        }
+                    }
+                },
+                include = {
+                    name: True
+                }
+            )
+
+            if is_duplicate[0]:
+                print("Den här måltiden finns redan.")
+                return
         
         else:
             print("Vänligen fyll i ett giltigt alternativ.")
