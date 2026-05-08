@@ -93,6 +93,120 @@ class Dish:
         
         return False
 
+class DishList:
+    def __init__(self, database) -> None:
+        self.database = database
+    
+    async def add(self, dish: Dish) -> object:
+        name = dish.name
+        main = dish.main
+        side = dish.sides
+        other_info = dish.other_info
+        weekend_worthy = dish.weekend_worthy
+
+        is_duplicate = await self.database.dishes.find_first(
+            where = {
+                "name": {
+                    "contains": name
+                }
+            }
+        )
+
+        if is_duplicate:
+            print("Den här rätten finns redan")
+            return False
+        
+        main_id = await self.database.main.find_first(
+            where = {
+                "main": main
+            }
+        )
+        side_id = await self.database.side.find_first(
+            where = {
+                "side": side
+            }
+        )
+
+        if not main_id:
+            main_id = await self.database.main.create(
+                data = {
+                    "main": main
+                }
+            )
+        
+        if not side_id:
+            side_id = await self.database.side.create(
+                data = {
+                    "side": side
+                }
+            )
+
+        return await self.database.dishes.create(
+            data = {
+                "name": name,
+                "mainId": main_id.id,
+                "sideId": side_id.id,
+                "otherInfo": other_info,
+                "weekendWorthy": weekend_worthy
+            }
+        )
+    
+    async def seek(self, arg) -> list:
+        result = await self.database.dishes.find_many(
+            where = {
+                "name": arg
+            }
+        )
+
+        print("Sökresultat:")
+
+        if type(result) == list:
+            for i in range(len(result)):
+                print(f"[{i + 1}] {result[i].name} ({result[i].side})")
+
+        print(result)
+        
+        return result
+    
+    async def destroy(self, arg: str) -> object: # yes this is a Metallica reference :p
+        result = await self.seek(arg)
+
+        if type(result) == list:
+            while True:
+                try:
+                    choice = int(input("Vilken av dem vill du ta bort?\n> "))
+                    dish_to_remove = result[choice - 1]
+                    break
+                
+                except ValueError:
+                    print("Vänligen skriv in en giltig siffra.")
+                
+            await self.database.dishes.delete(
+                where = {
+                    "id": dish_to_remove.id
+                }
+            )
+
+            return dish_to_remove
+        
+        else:
+            while True:
+                answer = input(f"Är du säker på att du vill ta bort {result}? [y/n]")
+
+                if answer not in ["y", "n"]:
+                    print("Vänligen skriv antingen y eller n")
+                
+                elif answer == "y":
+                    await self.database.dishes.delete(
+                        where = {
+                            "id": result.id
+                        }
+                    )
+                    
+                    break
+            
+            return result
+
 def print_dish_list(arg: str, generator: object) -> None:
     if arg == "all":
         print("ALLA MATRÄTTER")
@@ -120,9 +234,10 @@ async def main() -> None:
         }
     )
     generator = Generator(dishes)
+    dish_list = DishList(db)
 
     while True:
-        choices = "1. Nytt matförslag\n2. Visa alla maträtter\n3. Visa alla helgrätter\n4. Visa all vardagsmat\n5. Lägg till maträtt"
+        choices = "1. Nytt matförslag\n2. Visa alla maträtter\n3. Visa alla helgrätter\n4. Visa all vardagsmat\n5. Lägg till maträtt\n6. Sök och ta bort maträtt"
 
         print("ALTERNATIV\n" + choices)
 
@@ -152,30 +267,14 @@ async def main() -> None:
                 if weekend_worthy in ["y", "n"]:
                     weekend_worthy = "YES" if weekend_worthy == "y" else "NO"
                     break
-            
-            new_dish = Dish(name, main, side, other_info, weekend_worthy)
-            is_duplicate = await db.dishes.find_many(
-                where = {
-                    "name": name,
-                    "main": {
-                        "is": {
-                            main: main
-                        }
-                    },
-                    "side": {
-                        "is": {
-                            side: side
-                        }
-                    }
-                },
-                include = {
-                    name: True
-                }
-            )
 
-            if is_duplicate[0]:
-                print("Den här måltiden finns redan.")
-                return
+            new_dish = await dish_list.add(Dish(name, main, side, other_info, weekend_worthy))
+
+            if new_dish:
+                print(f"Lade till {new_dish.name} till matlistan.") # type: ignore
+        
+        elif choice == "6":
+            await dish_list.destroy(input("Sök efter maträtter att ta bort. Sök efter maträttens namn\n> "))
         
         else:
             print("Vänligen fyll i ett giltigt alternativ.")
