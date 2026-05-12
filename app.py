@@ -231,6 +231,9 @@ async def main() -> None:
             main = input("Rättens huvudingrediens:\n> ").capitalize()
             side = input("Rättens tillbehör:\n> ").capitalize()
             other_info = input("Övrig info om rätten (lämna tom om det inte finns någon):\n> ")
+
+            if side == "":
+                side = "None"
             
             while True:
                 weekend_worthy = input("Är rätten helgvärdig? [y/n]:\n> ").lower()
