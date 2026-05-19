@@ -113,6 +113,10 @@ class DishList(Generator):
             print("Den här rätten finns redan")
             return False
         
+        if name == "" or main == "":
+            print("Rättens namn och huvudingrediens kan inte vara tom")
+            return False
+        
         main_id = await self.db.main.find_first(
             where = {
                 "main": main
