@@ -48,10 +48,17 @@ class Generator:
         
         return dish
     
-    def combine_same(self, dish_list: list) -> list:
-        pass
+    def combine_same(self, dish_list: list) -> dict:
+        __result: dict[str, list] = {}
+
+        for item in dish_list:
+            for key, value in item.items():
+                item[key] = [value]
+                __result[key] = __result.get(key, []) + [value]
+
+        return __result
     
-    def get_all_dishes(self, arg) -> list:
+    def get_all_dishes(self, arg) -> dict:
         _dish_list = []
 
         if arg == "all":
@@ -67,8 +74,11 @@ class Generator:
             for dish in self.dishes:
                 if not Dish(dish.name, dish.main.main, dish.side.side, dish.otherInfo, dish.weekendWorthy).is_weekend_worthy():
                     _dish_list.append({"name": dish.name, "side": dish.side.side})
+        
+        _combined_list = self.combine_same(_dish_list)
+        print(_combined_list)
 
-        return _dish_list
+        return _combined_list
     
 class Dish:
     def __init__(self, name, main, sides, other_info, weekend_worthy) -> None:
@@ -208,7 +218,7 @@ class DishList(Generator):
         all_dishes = self.get_all_dishes(arg) # type: ignore
         
         for dish in all_dishes:
-            print(f"{dish['name']} ({dish['side']})")
+            print(f"{dish} ({[x for x in all_dishes[dish]]})")
 
 async def main() -> None:
     db = Prisma()
