@@ -11,30 +11,30 @@ datasource db {
 
 model Dishes {
   id            Int           @id @default(autoincrement())
-  name          String
+  name          String        @db.VarChar(150)
   main          Main          @relation(fields: [mainId], references: [id])
   mainId        Int           @default(0)
   side          Side          @relation(fields: [sideId], references: [id])
   sideId        Int           @default(0)
-  otherInfo     String
+  otherInfo     String        @db.VarChar(400)
   weekendWorthy WeekendWorthy @default(NO)
 }
 
 model User {
   id       Int    @id @default(autoincrement())
-  name     String
+  name     String @unique
   password String
 }
 
 model Side {
   id         Int      @id @default(autoincrement())
-  side String   @default("")
+  side String   @default("") @db.VarChar(150)
   dish       Dishes[]
 }
 
 model Main {
   id         Int      @id @default(autoincrement())
-  main String   @default("")
+  main String   @default("") @db.VarChar(150)
   dish       Dishes[]
 }
 

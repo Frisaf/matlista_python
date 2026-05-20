@@ -1,4 +1,4 @@
-import asyncio, random
+import asyncio, random, re
 from prisma import Prisma
 
 class Generator:
@@ -108,12 +108,14 @@ class DishList(Generator):
         same = self.find_same(dish)
         same_sides = self.get_sides(same)
         is_duplicate = True if side in same_sides else False
+        __name_not_empty = re.search(r"(.|\s)*\S(.|\s)*", name) # Returns True if the string is not empty and contains any non-whitespace character.
+        __main_not_empty = re.search(r"(.|\s)*\S(.|\s)*", main) # Similarly, it will return False if the string is empty or only contains whitespaces.
 
         if is_duplicate:
             print("Den här rätten finns redan")
             return False
         
-        if name == "" or main == "":
+        if not __name_not_empty or not __main_not_empty:
             print("Rättens namn och huvudingrediens kan inte vara tom")
             return False
         
@@ -153,8 +155,7 @@ class DishList(Generator):
         )
     
     def seek(self, arg) -> list:
-        result = [x for x in self.dishes if x.name == arg]
-        print(result)
+        result = [x for x in self.dishes if arg.capitalize() in x.name]
 
         print("Sökresultat:")
 
@@ -166,10 +167,18 @@ class DishList(Generator):
     async def destroy(self, arg: str) -> object: # yes this is a Metallica reference :p
         result = self.seek(arg)
 
+        if result == []:
+            print("Inga sökresultat kunde hittas")
+            return None
+
         while True:
             try:
-                choice = int(input("Vilken av dem vill du ta bort?\n> "))
-                dish_to_remove = result[choice - 1]
+                choice = input("Vilken av dem vill du ta bort? Lämna tom om du vill avbryta processen.\n> ")
+
+                if choice == "":
+                    return None
+                
+                dish_to_remove = result[int(choice) - 1]
                 break
             
             except ValueError:
@@ -233,7 +242,7 @@ async def main() -> None:
         elif choice == "5":
             name = input("Maträttens namn:\n> ").capitalize()
             main = input("Rättens huvudingrediens:\n> ").capitalize()
-            side = input("Rättens tillbehör:\n> ").capitalize()
+            side = input("Rättens tillbehör (lämna tom om det inte finns någon):\n> ").capitalize()
             other_info = input("Övrig info om rätten (lämna tom om det inte finns någon):\n> ")
 
             if side == "":
@@ -253,7 +262,9 @@ async def main() -> None:
         
         elif choice == "6":
             removed = await dish_list.destroy(input("Sök efter maträtter att ta bort. Sök efter maträttens namn\n> "))
-            print(f"Tog bort {removed.name} från matlistan") # type: ignore
+
+            if removed != None:
+                print(f"Tog bort {removed.name} från matlistan") # type: ignore
         
         else:
             print("Vänligen fyll i ett giltigt alternativ.")
