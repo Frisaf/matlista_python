@@ -48,6 +48,9 @@ class Generator:
         
         return dish
     
+    def combine_same(self, dish_list: list) -> list:
+        pass
+    
     def get_all_dishes(self, arg) -> list:
         _dish_list = []
 
@@ -217,11 +220,14 @@ async def main() -> None:
             include = {
                 "main": True,
                 "side": True
+            },
+            order = {
+                "name": "asc"
             }
         )
         generator = Generator(dishes)
         dish_list = DishList(dishes, db)
-        choices = "1. Nytt matförslag\n2. Visa alla maträtter\n3. Visa alla helgrätter\n4. Visa all vardagsmat\n5. Lägg till maträtt\n6. Sök och ta bort maträtt"
+        choices = "1. Nytt matförslag\n2. Visa alla maträtter\n3. Visa alla helgrätter\n4. Visa all vardagsmat\n5. Lägg till maträtt\n6. Sök och ta bort maträtt\n7. Avsluta programmet"
 
         print("ALTERNATIV\n" + choices)
 
@@ -265,6 +271,11 @@ async def main() -> None:
 
             if removed != None:
                 print(f"Tog bort {removed.name} från matlistan") # type: ignore
+        
+        elif choice == "7":
+            print("Hejdå!")
+            await asyncio.sleep(3.0)
+            exit()
         
         else:
             print("Vänligen fyll i ett giltigt alternativ.")
