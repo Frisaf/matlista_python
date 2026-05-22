@@ -241,7 +241,7 @@ async def main() -> None:
         )
         generator = Generator(dishes)
         dish_list = DishList(dishes, db)
-        choices = "1. Nytt matförslag\n2. Visa alla maträtter\n3. Visa alla helgrätter\n4. Visa all vardagsmat\n5. Lägg till maträtt\n6. Sök och ta bort maträtt\n7. Avsluta programmet"
+        choices = "1. Nytt matförslag\n2. Visa alla maträtter\n3. Visa alla helgrätter\n4. Visa all vardagsmat\n5. Lägg till maträtt\n6. Sök och ta bort maträtt\n7. Sök i Matlistan\n8. Avsluta programmet"
 
         print("ALTERNATIV\n" + choices)
 
@@ -269,10 +269,10 @@ async def main() -> None:
                 side = "None"
             
             while True:
-                weekend_worthy = input("Är rätten helgvärdig? [y/n]:\n> ").lower()
+                weekend_worthy = input("Är rätten helgvärdig? [y/N]:\n> ").lower()
 
-                if weekend_worthy in ["y", "n"]:
-                    weekend_worthy = "YES" if weekend_worthy == "y" else "NO"
+                if weekend_worthy in ["y", "n", ""]:
+                    weekend_worthy = "NO" if weekend_worthy == "n" or weekend_worthy == "" else "YES"
                     break
 
             new_dish = await dish_list.add(Dish(name, main, side, other_info, weekend_worthy))
@@ -287,6 +287,12 @@ async def main() -> None:
                 print(f"Tog bort {removed.name} från matlistan") # type: ignore
         
         elif choice == "7":
+            search = dish_list.seek(input("Sök efter rätter i matlistan efter dess namn\n> "))
+
+            if search == []:
+                print("Kunde inte hitta några sökreslutat.")
+        
+        elif choice == "8":
             print("Hejdå!")
             await asyncio.sleep(3.0)
             exit()
