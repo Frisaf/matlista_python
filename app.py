@@ -50,11 +50,16 @@ class Generator:
     
     def combine_same(self, dish_list: list) -> dict:
         __result: dict[str, list] = {}
+        __names = [x["name"] for x in dish_list]
+        __names = list(dict.fromkeys(__names))
 
-        for item in dish_list:
-            for key, value in item.items():
-                item[key] = [value]
-                __result[key] = __result.get(key, []) + [value]
+        for name in __names:
+            __result[name] = []
+        
+        for dish in dish_list:
+            for name in __names:
+                if dish["name"] == name:
+                    __result[name].append(dish["side"])
 
         return __result
     
@@ -76,7 +81,6 @@ class Generator:
                     _dish_list.append({"name": dish.name, "side": dish.side.side})
         
         _combined_list = self.combine_same(_dish_list)
-        print(_combined_list)
 
         return _combined_list
     
@@ -218,7 +222,7 @@ class DishList(Generator):
         all_dishes = self.get_all_dishes(arg) # type: ignore
         
         for dish in all_dishes:
-            print(f"{dish} ({[x for x in all_dishes[dish]]})")
+            print(f"{dish} ({", ".join(x for x in all_dishes[dish])})")
 
 async def main() -> None:
     db = Prisma()
